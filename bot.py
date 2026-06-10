@@ -6,10 +6,10 @@ WEBHOOK = os.environ["DISCORD_WEBHOOK"]
 headers = {"User-Agent": "Mozilla/5.0"}
 
 # ================= INPUT =================
-btc_invest_vnd = 100_000_000
+btc_invest_vnd = 10_000_000
 btc_buy_usd = 63200
 
-gold_qty = 20
+gold_qty = 1
 gold_buy_per_chi = 17_300_000
 
 # ================= BTC =================
