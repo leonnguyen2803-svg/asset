@@ -4,52 +4,61 @@ from bs4 import BeautifulSoup
 
 WEBHOOK = os.environ["DISCORD_WEBHOOK"]
 
-# ================= BTC =================
-btc_url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
-btc = requests.get(btc_url).json()["bitcoin"]["usd"]
+# ================= BTC USD =================
+btc_api = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
+btc_usd = requests.get(btc_api).json()["bitcoin"]["usd"]
 
-# ================= GOLD =================
-gold_url = "https://ngoctham.com/bang-gia-vang/"
+# ================= USD -> VND (Remitano scrape) =================
+url = "https://remitano.com/vn"
 headers = {"User-Agent": "Mozilla/5.0"}
 
-res = requests.get(gold_url, headers=headers, timeout=10)
+res = requests.get(url, headers=headers, timeout=10)
 soup = BeautifulSoup(res.text, "html.parser")
 
-rows = soup.select("table tr")
+text = soup.get_text(" ")
+vnd_rate = None
 
-gold_price = None
+# fallback scan rate (approx logic)
+for word in text.split():
+    if "VND" in word:
+        try:
+            # lấy số gần nhất (fallback đơn giản)
+            num = float(''.join(c for c in word if c.isdigit() or c == '.'))
+            if 20000 < num < 30000:
+                vnd_rate = num
+                break
+        except:
+            pass
 
-for row in rows:
-    cols = row.find_all("td")
-    if len(cols) >= 3:
-        name = cols[0].get_text(strip=True)
-        price = cols[2].get_text(strip=True)
+# nếu fail → fallback cứng
+if not vnd_rate:
+    vnd_rate = 25000  # safe fallback
 
-        if "Nhẫn 999.9" in name:
-            gold_price = price
-            break
+btc_vnd = btc_usd * vnd_rate
 
-# ================= DISCORD CARD =================
+# ================= DISCORD EMBED =================
 embed = {
-    "title": "📊 MARKET DASHBOARD",
-    "color": 0x3498db,
+    "title": "📊 CRYPTO DASHBOARD",
+    "color": 0x2ecc71,
     "fields": [
         {
-            "name": "💰 BTC",
-            "value": f"${btc:,.2f}",
+            "name": "💰 BTC (USD)",
+            "value": f"${btc_usd:,.2f}",
             "inline": True
         },
         {
-            "name": "🥇 Gold (Nhẫn 999.9)",
-            "value": gold_price or "N/A",
+            "name": "🇻🇳 BTC (VND)",
+            "value": f"{btc_vnd:,.0f} VND",
             "inline": True
+        },
+        {
+            "name": "💱 Rate",
+            "value": f"1 USD ≈ {vnd_rate} VND",
+            "inline": False
         }
     ]
 }
 
-requests.post(
-    WEBHOOK,
-    json={"embeds": [embed]}
-)
+requests.post(WEBHOOK, json={"embeds": [embed]})
 
 print("DONE")
