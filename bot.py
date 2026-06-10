@@ -3,7 +3,6 @@ import os
 from bs4 import BeautifulSoup
 
 WEBHOOK = os.environ["DISCORD_WEBHOOK"]
-
 headers = {"User-Agent": "Mozilla/5.0"}
 
 # ================= BTC =================
@@ -15,42 +14,38 @@ btc = requests.get(
 btc_vnd = btc * 25000
 
 # ================= GOLD =================
-gold_url = "https://ngoctham.com/bang-gia-vang/"
-res = requests.get(gold_url, headers=headers, timeout=10)
-soup = BeautifulSoup(res.text, "html.parser")
+try:
+    gold_url = "https://ngoctham.com/bang-gia-vang/"
+    res = requests.get(gold_url, headers=headers, timeout=10)
+    soup = BeautifulSoup(res.text, "html.parser")
 
-gold_price = None
+    gold_price = None
 
-for row in soup.select("table tr"):
-    cols = row.find_all("td")
-    if len(cols) >= 3:
-        if "Nhẫn 999.9" in cols[0].get_text():
-            gold_price = cols[2].get_text(strip=True)
-            break
+    for row in soup.select("table tr"):
+        cols = row.find_all("td")
+        if len(cols) >= 3:
+            if "Nhẫn 999.9" in cols[0].get_text():
+                gold_price = cols[2].get_text(strip=True)
+                break
+except:
+    gold_price = None
 
-# ================= FPT (FireAnt FIXED) =================
+# ================= FPT (VNDirect API - STABLE) =================
 def get_fpt():
-    urls = [
-        "https://svr1.fireant.vn/api/Data/Markets/Quotes?symbols=FPT",
-        "https://fireant.vn/api/Data/Markets/Quotes?symbols=FPT"
-    ]
-
-    for url in urls:
-        try:
-            r = requests.get(url, headers=headers, timeout=5)
-            data = r.json()
-            return data["data"][0]["matchPrice"]
-        except:
-            pass
-
-    return None
+    try:
+        url = "https://finfo-api.vndirect.com.vn/v4/stock_prices?q=code:FPT"
+        r = requests.get(url, timeout=10)
+        data = r.json()
+        return data["data"][0]["close"]
+    except:
+        return None
 
 fpt = get_fpt()
 
 # ================= DISCORD EMBED =================
 embed = {
     "title": "📊 MARKET DASHBOARD",
-    "color": 0x3498db,
+    "color": 0x00b894,
     "fields": [
         {
             "name": "₿ BTC (USD)",
@@ -68,8 +63,8 @@ embed = {
             "inline": False
         },
         {
-            "name": "📈 FPT",
-            "value": f"{fpt} VND" if fpt else "N/A",
+            "name": "📈 FPT (VNDirect)",
+            "value": f"{fpt}" if fpt else "N/A",
             "inline": False
         }
     ]
