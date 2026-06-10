@@ -4,14 +4,14 @@ from bs4 import BeautifulSoup
 
 WEBHOOK = os.environ["DISCORD_WEBHOOK"]
 
-# ================= BTC USD =================
-btc_api = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
-btc_usd = requests.get(btc_api).json()["bitcoin"]["usd"]
+# ================= BTC =================
+btc = requests.get(
+    "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
+    timeout=10
+).json()["bitcoin"]["usd"]
 
-# ================= VND RATE (stable fallback) =================
-# dùng rate cố định ổn định (tránh scrape lỗi Remitano)
 vnd_rate = 25000
-btc_vnd = btc_usd * vnd_rate
+btc_vnd = btc * vnd_rate
 
 # ================= GOLD =================
 gold_url = "https://ngoctham.com/bang-gia-vang/"
@@ -20,11 +20,9 @@ headers = {"User-Agent": "Mozilla/5.0"}
 res = requests.get(gold_url, headers=headers, timeout=10)
 soup = BeautifulSoup(res.text, "html.parser")
 
-rows = soup.select("table tr")
-
 gold_price = None
 
-for row in rows:
+for row in soup.select("table tr"):
     cols = row.find_all("td")
     if len(cols) >= 3:
         name = cols[0].get_text(strip=True)
@@ -34,14 +32,26 @@ for row in rows:
             gold_price = price
             break
 
+# ================= FPT (FireAnt API) =================
+def get_fpt():
+    try:
+        url = "https://fireant.vn/api/Data/Markets/Quotes?symbols=FPT"
+        r = requests.get(url, timeout=5)
+        data = r.json()
+        return data["data"][0]["matchPrice"]
+    except:
+        return None
+
+fpt_price = get_fpt()
+
 # ================= DISCORD EMBED =================
 embed = {
     "title": "📊 MARKET DASHBOARD",
-    "color": 0x3498db,
+    "color": 0x00b894,
     "fields": [
         {
             "name": "₿ BTC (USD)",
-            "value": f"${btc_usd:,.2f}",
+            "value": f"${btc:,.2f}",
             "inline": True
         },
         {
@@ -50,8 +60,13 @@ embed = {
             "inline": True
         },
         {
-            "name": "🥇 Gold (Nhẫn 999.9)",
+            "name": "🥇 GOLD (Nhẫn 999.9)",
             "value": gold_price or "N/A",
+            "inline": False
+        },
+        {
+            "name": "📈 FPT",
+            "value": f"{fpt_price} VND" if fpt_price else "N/A",
             "inline": False
         }
     ]
