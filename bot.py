@@ -11,7 +11,14 @@ btc_usd = requests.get(
     timeout=10
 ).json()["bitcoin"]["usd"]
 
-btc_vnd = btc_usd * 25000
+btc_buy = 63200
+
+btc_vnd_rate = 25000
+
+btc_vnd = btc_usd * btc_vnd_rate
+btc_buy_vnd = btc_buy * btc_vnd_rate
+
+btc_profit = ((btc_usd - btc_buy) / btc_buy) * 100
 
 # ================= GOLD =================
 try:
@@ -28,17 +35,30 @@ try:
             price = cols[2].get_text(strip=True)
 
             if "Nhẫn 999.9" in name:
-                gold_price = price
+                gold_price = int(price.replace(".", "").replace(",", ""))
                 break
 except:
     gold_price = None
 
-# ================= DISCORD =================
+gold_buy = 17300000
+
+if gold_price:
+    gold_profit = ((gold_price - gold_buy) / gold_buy) * 100
+else:
+    gold_profit = None
+
+# ================= FORMAT =================
+btc_sign = "🟢" if btc_profit >= 0 else "🔴"
+gold_sign = "🟢" if gold_profit and gold_profit >= 0 else "🔴"
+
 message = f"""📊 MARKET REPORT
 
-BTC: ${btc_usd:,.0f}
-BTC: {btc_vnd:,.0f} VND
-Nhẫn vàng trơn 1 chỉ: {gold_price or 'N/A'} VND
+₿ BTC: ${btc_usd:,.0f}
+₿ BTC: {btc_vnd:,.0f} VND
+{btc_sign} BTC P/L: {btc_profit:+.2f}%
+
+🥇 Nhẫn vàng trơn 1 chỉ: {gold_price or 'N/A'} VND
+{gold_sign} GOLD P/L: {gold_profit:+.2f}% if gold_profit is not None else 'N/A'
 """
 
 requests.post(
