@@ -12,7 +12,6 @@ btc = response.json()["bitcoin"]["usd"]
 
 message = f"""
 BTC Report
-
 💰 BTC Price: ${btc:,.2f}
 """
 
