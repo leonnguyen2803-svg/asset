@@ -1,3 +1,73 @@
+import requests
+import os
+from bs4 import BeautifulSoup
+
+WEBHOOK = os.environ["DISCORD_WEBHOOK"]
+headers = {"User-Agent": "Mozilla/5.0"}
+
+# ================= INPUT =================
+btc_invest_vnd = 10_000_000
+btc_buy_usd = 63200
+
+gold_qty = 1
+gold_buy_per_chi = 17_300_000
+
+# ================= BTC =================
+btc_usd = requests.get(
+    "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
+    timeout=10
+).json()["bitcoin"]["usd"]
+
+usd_vnd = requests.get(
+    "https://open.er-api.com/v6/latest/USD",
+    timeout=10
+).json()["rates"]["VND"]
+
+btc_vnd = btc_usd * usd_vnd
+
+btc_amount = btc_invest_vnd / (btc_buy_usd * usd_vnd)
+
+btc_value_now = btc_amount * btc_usd * usd_vnd
+
+btc_profit_vnd = btc_value_now - btc_invest_vnd
+btc_profit_pct = (btc_profit_vnd / btc_invest_vnd) * 100
+
+# ================= GOLD =================
+url = "https://ngoctham.com/bang-gia-vang/"
+res = requests.get(url, headers=headers, timeout=10)
+soup = BeautifulSoup(res.text, "html.parser")
+
+gold_price = None
+
+for row in soup.select("table tr"):
+    cols = row.find_all("td")
+    if len(cols) >= 3:
+        if "Nhẫn 999.9" in cols[0].get_text(strip=True):
+            gold_price = int(
+                cols[2].get_text(strip=True)
+                .replace(".", "")
+                .replace(",", "")
+            )
+            break
+
+gold_invest = gold_qty * gold_buy_per_chi
+
+if gold_price:
+    gold_value_now = gold_qty * gold_price
+    gold_profit_vnd = gold_value_now - gold_invest
+    gold_profit_pct = (gold_profit_vnd / gold_invest) * 100
+else:
+    gold_value_now = gold_invest
+    gold_profit_vnd = 0
+    gold_profit_pct = 0
+
+# ================= TOTAL =================
+total_invest = btc_invest_vnd + gold_invest
+total_now = btc_value_now + gold_value_now
+
+total_profit_vnd = total_now - total_invest
+total_profit_pct = (total_profit_vnd / total_invest) * 100
+
 # ================= OUTPUT =================
 message = f"""BTC: {btc_usd:,.0f} USD
 BTC: {btc_vnd:,.0f} VND
