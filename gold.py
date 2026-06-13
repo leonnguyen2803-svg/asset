@@ -26,7 +26,7 @@ for row in rows:
             break
 
 embed = {
-    "title": "💰 GOLD DASHBOARD",
+    "title": "Báo cáo giá vàng hiện tại",
     "color": 0xF1C40F,
     "fields": [
         {"name": "Loại vàng", "value": "Nhẫn 999.9", "inline": True},
