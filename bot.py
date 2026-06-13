@@ -77,7 +77,6 @@ Nhẫn vàng trơn 1 chỉ: {gold_price if gold_price else 'N/A'} VND
 Lợi nhuận: {gold_profit_pct:+.2f}% ({gold_profit_vnd:+,.0f} VND)
 
 Thông tin hiện tại: {total_profit_pct:+.2f}% ({total_profit_vnd:+,.0f} VND)
-
 Tổng tài sản: {total_now:,.0f} VND
 """
 
